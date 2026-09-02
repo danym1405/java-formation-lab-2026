@@ -23,18 +23,23 @@ public class RouterPlannerTest {
     RoutePlanner programmer;
     private Bus electricBus;
     private Bus dieselBus;
+    private Bus gasBus;
     private Route electricRoute;
     private Route dieselRoute;
     private Route hybridRoute;
+    private Route gasRoute; 
 
     @BeforeEach
     void setUp() {
         programmer = new RoutePlanner();
         electricBus = new Bus("1", "ABC123", BusType.Electric);
         dieselBus = new Bus("2", "DEF456", BusType.Diesel);
+        gasBus = new Bus("3", "GHI789", BusType.Gas);
         electricRoute = new Route("R1", "Electric Route", RouteType.Electric);
         dieselRoute = new Route("R2", "Diesel Route", RouteType.Diesel);
         hybridRoute = new Route("R3", "Hybrid Route", RouteType.Hybrid);
+        gasRoute = new Route("R4", "Gas Route", RouteType.Gas);
+
     }
 
     @Test
@@ -52,12 +57,19 @@ public class RouterPlannerTest {
         assertTrue(programmer.isValidAssignment(electricBus, electricRoute));
         
     }
-    
+
     @Test
     @DisplayName("Validates non electric buses on hybrid routes")
     void testBusOnHybridRoutes() {
 
         assertTrue(programmer.isValidAssignment(dieselBus, hybridRoute));
+    }
+    
+    @Test
+    @DisplayName("Validates gas buses on gas routes")
+    void testGasBusOnGasRoutes() {
+
+        assertTrue(programmer.isValidAssignment(gasBus, gasRoute));
     }
 
 
@@ -130,8 +142,54 @@ public class RouterPlannerTest {
     void testRejectNullBusParameter() {
         
        assertThrows(IllegalArgumentException.class, () -> {
-            programmer.registerBus(new Bus("3", "ABC890", null));
+            programmer.registerBus(new Bus("4", "ABC890", null));
         });
     }
 
+    @Test
+    @DisplayName("It is a registered bus")
+    void testIsRegisteredBus() {
+        
+        Bus unregisteredBus = new Bus("5", "XYZ123", BusType.Electric);
+        Schedule schedule1 = new Schedule(LocalTime.of(8, 0), LocalTime.of(10, 0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            programmer.assignSchedule(unregisteredBus, electricRoute, schedule1);
+        });
+    }
+
+    @Test
+    @DisplayName("Reject getting valid schedules for unregistered bus")
+    void testIsRegisteredBusInvalidSchedules() {
+
+        Bus unregisteredBusElectric = new Bus("6", "MNV345", BusType.Gas);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            programmer.getValidSchedules(unregisteredBusElectric, RouteType.Gas);
+        });
+
+    }
+
+    @Test
+    @DisplayName("Reject null bus parameter")
+    void testIsBusNullParameter() {
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            programmer.getValidSchedules(null, RouteType.Hybrid);
+        });
+
+    }
+
+    @Test
+    @DisplayName("Reject invalid route assignments")
+    void testRejectInvalidRoute() {
+        
+        Route invalidRoute = new Route("R5","Invalid", RouteType.Diesel);
+        programmer.registerBus(dieselBus);
+        Schedule schedule = new Schedule(LocalTime.of(2, 0), LocalTime.of(6, 0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            programmer.assignSchedule(dieselBus, invalidRoute, schedule);
+        });
+    }
 }
