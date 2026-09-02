@@ -17,7 +17,7 @@ import lombok.Data;
 @Data
 public class RoutePlanner {
 
-    private Set<Bus> scheduledBuses = new HashSet<>();
+   private Set<Bus> scheduledBuses = new HashSet<>();
     private Map<String, List<Schedule>> schedulesByBus = new HashMap<>();
     
 
@@ -59,6 +59,12 @@ public class RoutePlanner {
         if(bus == null || route == null || schedule == null)
             throw new IllegalArgumentException("Bus, route, and schedule cannot be null");
 
+        boolean registered = scheduledBuses.stream()
+        .anyMatch(scheduledBus -> scheduledBus.getId().equals(bus.getId()));
+
+        if(!registered)
+            throw new IllegalArgumentException("Bus is not registered");
+
         if(!schedule.isValidRange())
             throw new IllegalArgumentException("Invalid schedule range");
 
@@ -86,16 +92,16 @@ public class RoutePlanner {
         if(bus == null || routeType == null)
             throw new IllegalArgumentException("Bus and route type cannot be null");
 
-        Route route = new Route("", "", routeType);
-
-        if(!isValidAssignment(bus, route))
-            throw new UnsupportedTypeException("Invalid bus and route type assignment");
-
         boolean registered = scheduledBuses.stream()
         .anyMatch(scheduledBus -> scheduledBus.getId().equals(bus.getId()));
 
         if(!registered)
             throw new IllegalArgumentException("Bus is not registered");
+
+        Route route = new Route("", "", routeType);
+
+        if(!isValidAssignment(bus, route))
+            throw new UnsupportedTypeException("Invalid bus and route type assignment");
 
         String busId = bus.getId();
         List<Schedule> validSchedules;
@@ -108,5 +114,4 @@ public class RoutePlanner {
 
         return validSchedules;
     }
-
 }
