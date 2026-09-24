@@ -48,7 +48,7 @@ class InventoryControllerTest {
 
     @BeforeEach
     void setUp() {
-        product = new ProductDto(); // ajusta según los campos reales de tu DTO
+        product = new ProductDto();
     }
 
     // ----------------------------------------------------------------
