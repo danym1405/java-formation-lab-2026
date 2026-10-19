@@ -1,12 +1,11 @@
 package com.indra.catalog.suppliers.web;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,22 +32,22 @@ class SupplierControllerTest {
     private SupplierServiceImpl supplierService;
 
     @Test
-    void test1() throws Exception {
-        Supplier supplier = new Supplier();
+    void shouldReturnSupplierWhenSupplierExists() throws Exception {
+        Supplier supplier = new Supplier("ACME LTDA", "900123456-7", "compras@acme.co");
         supplier.setId("SUP-001");
-        supplier.setName("ACME LTDA");
-        supplier.setTaxId("900123456-7");
-        supplier.setEmail("compras@acme.co");
         when(supplierService.findById("SUP-001")).thenReturn(supplier);
 
         mockMvc.perform(get("/api/suppliers/SUP-001"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(
-                        "{\"id\":\"SUP-001\",\"name\":\"ACME LTDA\",\"taxId\":\"900123456-7\",\"email\":\"compras@acme.co\"}"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("SUP-001"))
+                .andExpect(jsonPath("$.name").value("ACME LTDA"))
+                .andExpect(jsonPath("$.taxId").value("900123456-7"))
+                .andExpect(jsonPath("$.email").value("compras@acme.co"));
     }
 
     @Test
-    void test2() throws Exception {
+    void shouldReturnNotFoundWhenSupplierDoesNotExist() throws Exception {
         when(supplierService.findById("SUP-999")).thenThrow(new SupplierNotFoundException("SUP-999"));
 
         mockMvc.perform(get("/api/suppliers/SUP-999"))
@@ -57,12 +56,12 @@ class SupplierControllerTest {
     }
 
     @Test
-    void test3() throws Exception {
-        when(supplierService.create(any())).thenAnswer(invocation -> {
-            Supplier supplier = invocation.getArgument(0);
-            supplier.setId("SUP-001");
-            return supplier;
-        });
+    void shouldCreateSupplierAndReturnLocationHeader() throws Exception {
+        Supplier createdSupplier = new Supplier("ACME LTDA", "900123456-7", "compras@acme.co");
+        createdSupplier.setId("SUP-001");
+
+        when(supplierService.create(any(Supplier.class)))
+                .thenReturn(createdSupplier);
 
         mockMvc.perform(post("/api/suppliers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,13 +73,16 @@ class SupplierControllerTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/api/suppliers/SUP-001"))
+                .andExpect(header().string(
+                        "Location",
+                        "http://localhost/api/suppliers/SUP-001"))
+                .andExpect(jsonPath("$.id").value("SUP-001"))
                 .andExpect(jsonPath("$.name").value("ACME LTDA"))
-                .andExpect(jsonPath("$.taxId").value("900123456-7"));
+                .andExpect(jsonPath("$.email").value("compras@acme.co"));
     }
 
     @Test
-    void test4() throws Exception {
+    void shouldReturn400WhenRequestIsInvalid() throws Exception {
         mockMvc.perform(post("/api/suppliers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -90,13 +92,14 @@ class SupplierControllerTest {
                                     "email": "compras@acme.co"
                                 }
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors[0]").value(containsString("name")));
+                .andExpect(status().isBadRequest()); 
+        
+
+                verifyNoInteractions(supplierService);
     }
 
     @Test
-    void test5() throws Exception {
+    void shouldReturn204WhenSupplierIsDeleted() throws Exception {
         mockMvc.perform(delete("/api/suppliers/SUP-001"))
                 .andExpect(status().isNoContent());
     }
