@@ -30,6 +30,9 @@ class SupplierControllerTest {
     @MockBean
     private SupplierServiceImpl supplierService;
 
+    @MockBean
+    private SupplierWebMapper mapper;   
+
     @Test
     void test1() throws Exception {
         Supplier supplier = new Supplier();
