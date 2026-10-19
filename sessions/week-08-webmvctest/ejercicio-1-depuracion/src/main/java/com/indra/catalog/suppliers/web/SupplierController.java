@@ -1,5 +1,5 @@
 package com.indra.catalog.suppliers.web;
-
+import jakarta.validation.Valid;
 import com.indra.catalog.suppliers.application.SupplierServiceImpl;
 import com.indra.catalog.suppliers.domain.Supplier;
 import com.indra.catalog.suppliers.web.dto.CreateSupplierRequest;
@@ -34,7 +34,7 @@ public class SupplierController {
     }
 
     @PostMapping
-    public ResponseEntity<SupplierResponse> create(@RequestBody CreateSupplierRequest request) {
+    public ResponseEntity<SupplierResponse> create(@Valid @RequestBody CreateSupplierRequest request) {
         Supplier supplier = mapper.toDomain(request);
         // Normalización exigida por el área de compras: razón social en mayúsculas y NIT sin puntos
         supplier.setName(supplier.getName().trim().toUpperCase());
